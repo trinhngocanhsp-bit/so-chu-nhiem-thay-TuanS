@@ -416,13 +416,17 @@
                     </div>
                     <div class="table-responsive" style="max-height:350px;">
                         <table>
-                            <thead>
-                                <tr style="background:#f8fafc; color:#1e3a8a;">
-                                    <th style="width:45px;">STT</th><th style="text-align:left;">Họ và Tên học sinh</th>
-                                    <th style="width:150px;">SĐT Zalo</th><th style="width:140px;">Chức vụ</th>
-                                    <th style="width:110px;">Thao tác Zalo</th><th style="width:55px;">Xóa</th>
-                                </tr>
-                            </thead>
+                           <thead>
+    <tr style="background:#f8fafc; color:#1e3a8a;">
+        <th style="width:45px;">STT</th>
+        <th style="text-align:left;">Họ và Tên học sinh</th>
+        <th style="width:140px;">SĐT Zalo</th>
+        <th style="width:130px;">Chức vụ</th>
+        <th style="width:110px;">Tổ</th>
+        <th style="width:110px;">Thao tác Zalo</th>
+        <th style="width:65px;">Xóa</th>
+    </tr>
+</thead>
                             <tbody id="admin-student-table-body"></tbody>
                         </table>
                     </div>
@@ -607,75 +611,81 @@
         window.selectedPosForSwap = null;
 
         function sanitizeState() {
-            if (!STATE.students || !Array.isArray(STATE.students) || STATE.students.length === 0) STATE.students = [...DEFAULT_STUDENTS_10A4];
-            if (!STATE.phones || typeof STATE.phones !== 'object') STATE.phones = {};
-            if (!STATE.positions || typeof STATE.positions !== 'object') STATE.positions = {};
-            if (!STATE.emulation || typeof STATE.emulation !== 'object') STATE.emulation = {};
-            if (!STATE.map || typeof STATE.map !== 'object' || Object.keys(STATE.map).length === 0) {
-                let m = {};
-                for (let i = 1; i <= 48; i++) m['pos_' + i] = i <= STATE.students.length ? i : null;
-                STATE.map = m;
-            }
-            if (!STATE.notices || !Array.isArray(STATE.notices)) STATE.notices = [];
-            if (!STATE.duty || typeof STATE.duty !== 'object') STATE.duty = {};
-            if (!STATE.officialGrades || typeof STATE.officialGrades !== 'object') STATE.officialGrades = {};
-            if (!STATE.config || typeof STATE.config !== 'object' || !STATE.config.schoolName) {
-                STATE.config = {
-                    schoolName: "Trường THPT Tân Yên số 2",
-                    className: "Lớp 10A4", 
-                    schoolYear: "2026 - 2027",
-                    teacherName: "Trịnh Ngọc Ánh",
-                    startDate: "2026-09-07",
-                    deadlineDay: 1,
-                    deadlineHour: 23,
-                    deadlineScope: "week"
-                };
-            }
-        }
-
-        window.onload = function() {
-            try {
-                let s = localStorage.getItem('students'); if(s && s !== "null") STATE.students = JSON.parse(s);
-                let p = localStorage.getItem('phones'); if(p && p !== "null") STATE.phones = JSON.parse(p);
-                let pos = localStorage.getItem('positions'); if(pos && pos !== "null") STATE.positions = JSON.parse(pos);
-                let em = localStorage.getItem('emulation'); if(em && em !== "null") STATE.emulation = JSON.parse(em);
-                let m = localStorage.getItem('map'); if(m && m !== "null") STATE.map = JSON.parse(m);
-                let n = localStorage.getItem('notices'); if(n && n !== "null") STATE.notices = JSON.parse(n);
-                let d = localStorage.getItem('duty'); if(d && d !== "null") STATE.duty = JSON.parse(d);
-                let og = localStorage.getItem('officialGrades'); if(og && og !== "null") STATE.officialGrades = JSON.parse(og);
-                let c = localStorage.getItem('config'); 
-                if(c && c !== "null") {
-                    STATE.config = { ...STATE.config, ...JSON.parse(c) };
-                }
-            } catch(e) { console.error("Lỗi nạp local data:", e); }
-
-            sanitizeState();
-            window.buildUI();
-
-            if (typeof firebase !== 'undefined') {
-                try {
-                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                    STATE.dbRef = firebase.database().ref('THPT_Tan_Yen_2_' + MA_DU_LIEU);
-                    STATE.dbRef.once('value').then((snapshot) => {
-                        if (snapshot.exists()) {
-                            let data = snapshot.val();
-                            if(data.students && data.students !== "null") STATE.students = JSON.parse(data.students);
-                            if(data.phones && data.phones !== "null") STATE.phones = JSON.parse(data.phones);
-                            if(data.positions && data.positions !== "null") STATE.positions = JSON.parse(data.positions);
-                            if(data.emulation && data.emulation !== "null") STATE.emulation = JSON.parse(data.emulation);
-                            if(data.map && data.map !== "null") STATE.map = JSON.parse(data.map);
-                            if(data.notices && data.notices !== "null") STATE.notices = JSON.parse(data.notices);
-                            if(data.duty && data.duty !== "null") STATE.duty = JSON.parse(data.duty);
-                            if(data.officialGrades && data.officialGrades !== "null") STATE.officialGrades = JSON.parse(data.officialGrades);
-                            if(data.config && data.config !== "null") STATE.config = { ...STATE.config, ...JSON.parse(data.config) };
-                            
-                            sanitizeState();
-                            window.buildUI();
-                        }
-                    }).catch(err => console.warn("Firebase fetch error:", err));
-                } catch(e) { console.warn("Firebase block error:", e); }
-            }
+    if (!STATE.students || !Array.isArray(STATE.students) || STATE.students.length === 0) STATE.students = [...DEFAULT_STUDENTS_10A4];
+    if (!STATE.phones || typeof STATE.phones !== 'object') STATE.phones = {};
+    if (!STATE.positions || typeof STATE.positions !== 'object') STATE.positions = {};
+    if (!STATE.studentGroups || typeof STATE.studentGroups !== 'object') STATE.studentGroups = {}; 
+    if (!STATE.groupLabelSwap || typeof STATE.groupLabelSwap !== 'object') STATE.groupLabelSwap = { 1: 1, 2: 2, 3: 3, 4: 4 }; // <-- Bổ sung hàm chống mất trí nhớ nhãn dán
+    if (!STATE.emulation || typeof STATE.emulation !== 'object') STATE.emulation = {};
+    if (!STATE.map || typeof STATE.map !== 'object' || Object.keys(STATE.map).length === 0) {
+        let m = {};
+        for (let i = 1; i <= 48; i++) m['pos_' + i] = i <= STATE.students.length ? i : null;
+        STATE.map = m;
+    }
+    if (!STATE.notices || !Array.isArray(STATE.notices)) STATE.notices = [];
+    if (!STATE.duty || typeof STATE.duty !== 'object') STATE.duty = {};
+    if (!STATE.officialGrades || typeof STATE.officialGrades !== 'object') STATE.officialGrades = {};
+    if (!STATE.config || typeof STATE.config !== 'object' || !STATE.config.schoolName) {
+        STATE.config = {
+            schoolName: "Trường THPT Tân Yên số 2",
+            className: "Lớp 10A4", 
+            schoolYear: "2026 - 2027",
+            teacherName: "Trịnh Ngọc Ánh",
+            startDate: "2026-09-07",
+            deadlineDay: 1,
+            deadlineHour: 23,
+            deadlineScope: "week"
         };
+    }
+}
+
+window.onload = function() {
+    try {
+        let s = localStorage.getItem('students'); if(s && s !== "null") STATE.students = JSON.parse(s);
+        let p = localStorage.getItem('phones'); if(p && p !== "null") STATE.phones = JSON.parse(p);
+        let pos = localStorage.getItem('positions'); if(pos && pos !== "null") STATE.positions = JSON.parse(pos);
+        let sg = localStorage.getItem('studentGroups'); if(sg && sg !== "null") STATE.studentGroups = JSON.parse(sg);
+        let gls = localStorage.getItem('groupLabelSwap'); if(gls && gls !== "null") STATE.groupLabelSwap = JSON.parse(gls); // <-- Lệnh gọi nhãn dán từ bộ nhớ máy
+        let em = localStorage.getItem('emulation'); if(em && em !== "null") STATE.emulation = JSON.parse(em);
+        let m = localStorage.getItem('map'); if(m && m !== "null") STATE.map = JSON.parse(m);
+        let n = localStorage.getItem('notices'); if(n && n !== "null") STATE.notices = JSON.parse(n);
+        let d = localStorage.getItem('duty'); if(d && d !== "null") STATE.duty = JSON.parse(d);
+        let og = localStorage.getItem('officialGrades'); if(og && og !== "null") STATE.officialGrades = JSON.parse(og);
+        let c = localStorage.getItem('config'); 
+        if(c && c !== "null") {
+            STATE.config = { ...STATE.config, ...JSON.parse(c) };
+        }
+    } catch(e) { console.error("Lỗi nạp local data:", e); }
+
+    sanitizeState();
+    window.buildUI();
+
+    if (typeof firebase !== 'undefined') {
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            STATE.dbRef = firebase.database().ref('THPT_Tan_Yen_2_' + MA_DU_LIEU);
+            STATE.dbRef.once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    let data = snapshot.val();
+                    if(data.students && data.students !== "null") STATE.students = JSON.parse(data.students);
+                    if(data.phones && data.phones !== "null") STATE.phones = JSON.parse(data.phones);
+                    if(data.positions && data.positions !== "null") STATE.positions = JSON.parse(data.positions);
+                    if(data.studentGroups && data.studentGroups !== "null") STATE.studentGroups = JSON.parse(data.studentGroups);
+                    if(data.groupLabelSwap && data.groupLabelSwap !== "null") STATE.groupLabelSwap = JSON.parse(data.groupLabelSwap); // <-- Lệnh gọi nhãn dán từ Firebase
+                    if(data.emulation && data.emulation !== "null") STATE.emulation = JSON.parse(data.emulation);
+                    if(data.map && data.map !== "null") STATE.map = JSON.parse(data.map);
+                    if(data.notices && data.notices !== "null") STATE.notices = JSON.parse(data.notices);
+                    if(data.duty && data.duty !== "null") STATE.duty = JSON.parse(data.duty);
+                    if(data.officialGrades && data.officialGrades !== "null") STATE.officialGrades = JSON.parse(data.officialGrades);
+                    if(data.config && data.config !== "null") STATE.config = { ...STATE.config, ...JSON.parse(data.config) };
+                    
+                    sanitizeState();
+                    window.buildUI();
+                }
+            }).catch(err => console.warn("Firebase fetch error:", err));
+        } catch(e) { console.warn("Firebase block error:", e); }
+    }
+};
 
         window.saveData = function(key, valueObj) {
             if(STATE[key] !== undefined) STATE[key] = valueObj;
@@ -1499,31 +1509,41 @@ document.addEventListener("DOMContentLoaded", function() {
             window.renderInputPanel(role === 'loptruong' ? null : groupId, isLocked);
         }
 
-        window.renderAdminStudentManager = function() {
+       window.renderAdminStudentManager = function() {
     let tbody = document.getElementById("admin-student-table-body");
     if(!tbody) return;
     tbody.innerHTML = "";
 
-    // Danh sách các chức vụ chuẩn để giáo viên dễ phân công
     const positionOptions = ["", "Lớp trưởng", "Bí thư", "Lớp phó", "Tổ trưởng", "Sao đỏ", "Giữ SĐB"];
+    const groupOptions = ["", "Tổ 1", "Tổ 2", "Tổ 3", "Tổ 4"];
 
     STATE.students.forEach((name, i) => {
         let stt = i + 1;
         let phone = STATE.phones[stt] || "";
         let currentPos = STATE.positions[stt] || "";
+        let currentGroup = STATE.studentGroups && STATE.studentGroups[stt] ? STATE.studentGroups[stt] : "";
         
         let zaloBtn = phone 
             ? `<a href="https://zalo.me/${phone}" target="_blank" style="background:#eff6ff; color:#0068ff; padding:5px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; border:1px solid #bfdbfe;"><i class="fa-solid fa-comment-sms"></i> Nhắn Zalo</a>` 
             : `<span style="color:#94a3b8; font-size:0.75rem; font-style:italic;">Chưa có SĐT</span>`;
 
-        // Tạo thẻ chọn chức vụ trực tiếp trong bảng
-        let posSelectHTML = `<select onchange="window.updateStudentPosition(${stt}, this.value)" style="padding:5px 8px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-weight:600; color:#334155; outline:none; cursor:pointer;">`;
+        // Thẻ chọn Chức vụ
+        let posSelectHTML = `<select onchange="window.updateStudentPosition(${stt}, this.value)" style="padding:5px 8px; font-size:0.78rem; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-weight:600; color:#334155; outline:none; cursor:pointer; width:100%;">`;
         positionOptions.forEach(p => {
-            let label = p === "" ? "-- Thành viên --" : p;
+            let label = p === "" ? "-- Chức vụ --" : p;
             let selected = currentPos === p ? "selected" : "";
             posSelectHTML += `<option value="${p}" ${selected}>${label}</option>`;
         });
         posSelectHTML += `</select>`;
+
+        // Thẻ chọn Tổ (Cột mới thêm vào để phân tổ)
+        let groupSelectHTML = `<select onchange="window.updateStudentGroup(${stt}, this.value)" style="padding:5px 8px; font-size:0.78rem; border:1px solid #d97706; border-radius:6px; background:#fffbeb; font-weight:bold; color:#b45309; outline:none; cursor:pointer; width:100%;">`;
+        groupOptions.forEach(g => {
+            let label = g === "" ? "-- Chọn Tổ --" : g;
+            let selected = currentGroup === g ? "selected" : "";
+            groupSelectHTML += `<option value="${g}" ${selected}>${label}</option>`;
+        });
+        groupSelectHTML += `</select>`;
 
         tbody.innerHTML += `
             <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
@@ -1533,6 +1553,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     <input type="text" value="${phone}" onchange="window.updateStudentPhone(${stt}, this.value)" placeholder="Nhập SĐT..." style="padding:6px 10px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:6px; width:100%; outline:none; background:#fff;">
                 </td>
                 <td style="padding:10px 8px; text-align:center;">${posSelectHTML}</td>
+                <td style="padding:10px 8px; text-align:center;">${groupSelectHTML}</td>
                 <td style="padding:10px 8px; text-align:center;">${zaloBtn}</td>
                 <td style="padding:10px 8px; text-align:center;">
                     <button onclick="window.deleteStudent(${i})" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; padding:6px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-trash-can"></i> Xóa</button>
@@ -1540,7 +1561,6 @@ document.addEventListener("DOMContentLoaded", function() {
             </tr>`;
     });
 };
-
 window.updateStudentPhone = function(stt, phoneVal) {
     if(!STATE.phones) STATE.phones = {};
     STATE.phones[stt] = phoneVal.trim();
@@ -1555,6 +1575,22 @@ window.updateStudentPosition = function(stt, posVal) {
         STATE.positions[stt] = posVal;
     }
     window.saveData('positions', STATE.positions);
+};
+
+// --- BỔ SUNG HÀM CẬP NHẬT TỔ VÀ ĐỒNG BỘ SƠ ĐỒ ---
+window.updateStudentGroup = function(stt, groupVal) {
+    if(!STATE.studentGroups) STATE.studentGroups = {};
+    if(groupVal === "") {
+        delete STATE.studentGroups[stt];
+    } else {
+        STATE.studentGroups[stt] = groupVal; // Lưu lại chính xác chuỗi "Tổ 1", "Tổ 2"...
+    }
+    window.saveData('studentGroups', STATE.studentGroups);
+
+    // Tự động phân bổ lại vị trí và cập nhật sơ đồ ngay lập tức theo đúng cột tổ tương ứng
+    if (typeof window.autoMapStudentsByGroup === 'function') {
+        window.autoMapStudentsByGroup();
+    }
 };
 
 window.addNewStudent = function() {
@@ -1746,40 +1782,53 @@ window.addNewStudent = function() {
         window.renderAnnouncements = function() {}
         window.renderAdminAnnouncementsManager = function() {}
         window.renderSeatingMap = function() {}
+function createSeatingGridHTML(isAdmin) {
+    let html = '';
+    // Ánh xạ Cột Vật Lý (1,2,3,4) -> Tổ đang ngồi ở đó
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
 
-        function createSeatingGridHTML(isAdmin) {
-            let html = "";
-            for (let col = 1; col <= 4; col++) {
-                html += `<div class="col-group group-tto-${col}">`;
-                html += `<div style="text-align:center; font-weight:900; color:#1e293b; margin-bottom:8px; font-size:0.9rem; text-transform:uppercase;">Tổ ${col}</div>`;
-                
-                for (let row = 1; row <= 12; row += 2) {
-                    let pos1 = (row - 1) * 4 + col;
-                    let pos2 = (row) * 4 + col;
-                    
-                    html += `<div class="seat-row">`;
-                    [pos1, pos2].forEach(p => {
-                        let stt = STATE.map['pos_' + p];
-                        let name = stt ? STATE.students[stt - 1] : "";
-                        let role = stt ? (STATE.positions[stt] || "") : "";
-                        let roleBadge = role ? `<div style="font-size:0.5rem; color:#fff; background:#ef4444; border-radius:4px; padding:1px 4px; display:inline-block; margin-bottom:2px;">${role}</div>` : '';
-                        
-                        let extraClass = !stt ? 'empty-seat' : '';
-                        let onclick = isAdmin ? `onclick="window.selectSeatForSwap(${p})"` : '';
-                        
-                        html += `
-                        <div class="seat-box ${extraClass}" id="seat-${isAdmin?'admin':'public'}-${p}" ${onclick}>
-                            ${roleBadge}
-                            <div class="seat-name">${name || "Trống"}</div>
-                        </div>`;
-                    });
-                    html += `</div>`;
-                }
-                html += `</div>`;
-            }
-            return html;
+    const renderSeat = (p) => {
+        let stt = STATE.map['pos_' + p];
+        let name = stt ? STATE.students[stt - 1] : "";
+        let role = stt ? (STATE.positions[stt] || "") : "";
+        let roleBadge = role ? `<div style="font-size:0.5rem; color:#fff; background:#ef4444; border-radius:4px; padding:2px 4px; display:inline-block; margin-bottom:2px; font-weight:bold;">${role}</div>` : '';
+        let extraClass = !stt ? 'empty-seat' : '';
+        let onclick = isAdmin ? `onclick="window.selectSeatForSwap(${p})"` : '';
+        
+        return `
+        <div class="seat-box ${extraClass}" id="seat-${isAdmin?'admin':'public'}-${p}" ${onclick} style="border:2px solid #94a3b8; box-shadow:0 1px 3px rgba(0,0,0,0.05); width: 75px; height: 50px;">
+            ${roleBadge}
+            <div class="seat-name" style="text-align:center; font-size:0.58rem;">${name || "Trống"}</div>
+        </div>`;
+    };
+
+    const renderGroupColumn = (groupTitle, groupClass, pList) => {
+        let seatsHTML = '';
+        for (let i = 0; i < pList.length; i += 2) {
+            seatsHTML += `<div style="display:flex; gap:4px; justify-content:center; margin-bottom:4px;">${renderSeat(pList[i])}${pList[i+1] ? renderSeat(pList[i+1]) : ''}</div>`;
         }
+        return `
+        <div class="${groupClass}" style="flex: 1; min-width: 170px; padding: 8px; border-radius: 10px; background: #ffffff; display: flex; flex-direction: column;">
+            <div style="text-align:center; font-weight:900; font-size:0.85rem; text-transform:uppercase; margin-bottom:8px; padding:4px; border-radius:6px; background:rgba(0,0,0,0.04);">${groupTitle}</div>
+            ${seatsHTML}
+        </div>`;
+    };
 
+    let cols = {
+        1: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45],
+        2: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46],
+        3: [3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47],
+        4: [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]
+    };
+
+    html += `<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%;">`;
+    for (let c = 1; c <= 4; c++) {
+        let groupId = labelSwap[c] || c; 
+        html += renderGroupColumn(`Tổ ${groupId}`, `group-tto-${groupId}`, cols[c]);
+    }
+    html += `</div>`;
+    return html;
+}
         window.renderSeatingMap = function() {
             let container = document.getElementById("seating-map-grid-container");
             if(!container) return;
@@ -1814,25 +1863,40 @@ window.addNewStudent = function() {
                 window.renderAdminSeatingMap();
             }
         }
+window.swapEntireGroups = function() {
+    const targetG1 = parseInt(document.getElementById("swap-group-1").value); 
+    const targetG2 = parseInt(document.getElementById("swap-group-2").value); 
+    if(targetG1 === targetG2) return alert("Vui lòng chọn 2 tổ khác nhau!");
 
-        window.swapEntireGroups = function() {
-            const g1 = parseInt(document.getElementById("swap-group-1").value);
-            const g2 = parseInt(document.getElementById("swap-group-2").value);
-            if(g1 === g2) return alert("Vui lòng chọn 2 tổ khác nhau!");
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
 
-            let oldMap = {...STATE.map};
-            for (let row = 1; row <= 12; row++) {
-                let p1 = (row - 1) * 4 + g1;
-                let p2 = (row - 1) * 4 + g2;
-                
-                STATE.map['pos_' + p1] = oldMap['pos_' + p2];
-                STATE.map['pos_' + p2] = oldMap['pos_' + p1];
-            }
-            window.saveData('map', STATE.map);
-            window.renderSeatingMap(); window.renderAdminSeatingMap();
-            alert(`Đã đổi nguyên Tổ ${g1} và Tổ ${g2}!`);
-        }
+    // Định vị Tổ G1 và Tổ G2 đang nằm ở cột số mấy hiện tại
+    let col1 = Object.keys(labelSwap).find(k => labelSwap[k] == targetG1);
+    let col2 = Object.keys(labelSwap).find(k => labelSwap[k] == targetG2);
 
+    if (!col1 || !col2) {
+        STATE.groupLabelSwap = { 1: 1, 2: 2, 3: 3, 4: 4 };
+        window.saveData('groupLabelSwap', STATE.groupLabelSwap);
+        window.autoMapStudentsByGroup();
+        return alert("Dữ liệu cũ bị kẹt. Hệ thống đã tự sửa, cô vui lòng chọn đổi lại 1 lần nữa!");
+    }
+
+    col1 = parseInt(col1);
+    col2 = parseInt(col2);
+
+    // Hoán đổi tên tổ giữa 2 cột cho nhau
+    let temp = labelSwap[col1];
+    labelSwap[col1] = labelSwap[col2];
+    labelSwap[col2] = temp;
+
+    STATE.groupLabelSwap = labelSwap;
+    window.saveData('groupLabelSwap', STATE.groupLabelSwap);
+
+    // Yêu cầu sơ đồ tự động lấy học sinh ném vào đúng vị trí mới
+    window.autoMapStudentsByGroup();
+
+    alert(`🎉 Đã đổi chỗ thành công Tổ ${targetG1} và Tổ ${targetG2}!`);
+}
         window.autoSuggestSeating = function() {
             if(!confirm("Gợi ý xếp chỗ: Nam nữ ngồi xen kẽ, Ban cán sự rải đều. Sơ đồ hiện tại sẽ bị ghi đè. Bạn có chắc chắn?")) return;
             
@@ -2129,17 +2193,38 @@ window.addNewStudent = function() {
         }
 
         function getGroupMembers(groupId) {
-            let members = [];
-            for (let i = 1; i <= 48; i++) {
-                let stt = STATE.map['pos_' + i];
-                if (stt) {
-                    let colIndex = (i - 1) % 4; 
-                    let sttGroup = colIndex + 1;
-                    if (sttGroup == groupId) members.push(stt);
+    let members = [];
+    
+    // Đọc danh sách học sinh chuẩn từ cấu hình Tổ ở Tab 5 (Không bị ảnh hưởng bởi việc đổi chỗ sơ đồ)
+    if (typeof STATE !== 'undefined' && STATE.studentGroups) {
+        for (let stt = 1; stt <= STATE.students.length; stt++) {
+            let assignedGroupStr = STATE.studentGroups[stt];
+            if (assignedGroupStr) {
+                let gNum = parseInt(String(assignedGroupStr).replace(/\D/g, ''));
+                if (gNum == groupId) {
+                    members.push(stt);
                 }
             }
-            return members;
         }
+    }
+    
+    // Nếu tab 5 chưa phân tổ, dự phòng đọc theo cột sơ đồ
+    if (members.length === 0 && typeof STATE !== 'undefined' && STATE.map) {
+        for (let i = 1; i <= 48; i++) {
+            let stt = STATE.map['pos_' + i];
+            if (stt) {
+                let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+                let colIndex = ((i - 1) % 4) + 1; 
+                let actualGroupNum = labelSwap[colIndex];
+                if (actualGroupNum == groupId) {
+                    members.push(stt);
+                }
+            }
+        }
+    }
+    
+    return members;
+}
 
         window.finalizeReport = function(groupId) {
             const week = document.getElementById("input-week-select").value;
@@ -2835,6 +2920,201 @@ window.addEventListener("DOMContentLoaded", function() {
         updateDeadlineUI(); // Chạy luôn lần đầu khi load trang
     }
 });
+window.autoMapStudentsByGroup = function() {
+    let newMap = {};
+    for (let i = 1; i <= 48; i++) newMap['pos_' + i] = null;
+
+    // Lọc học sinh bám chặt vào thiết lập Tổ cố định ở Tab 5
+    let groups = { 1: [], 2: [], 3: [], 4: [], "Chưa chọn": [] };
+    STATE.students.forEach((_, idx) => {
+        let stt = idx + 1;
+        let gStr = STATE.studentGroups && STATE.studentGroups[stt] ? STATE.studentGroups[stt] : "";
+        let gNum = parseInt(String(gStr).replace(/\D/g, ''));
+        if (gNum >= 1 && gNum <= 4) groups[gNum].push(stt);
+        else groups["Chưa chọn"].push(stt);
+    });
+
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+    let cols = {
+        1: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45],
+        2: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46],
+        3: [3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47],
+        4: [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]
+    };
+
+    // Đẩy danh sách học sinh của tổ đó vào đúng cột vật lý đang mang tên tổ
+    for (let c = 1; c <= 4; c++) {
+        let groupId = labelSwap[c] || c; 
+        let members = groups[groupId] || []; 
+        
+        members.forEach((stt, index) => {
+            if (index < cols[c].length) {
+                newMap['pos_' + cols[c][index]] = stt;
+            }
+        });
+    }
+
+    let unassigned = [...groups["Chưa chọn"]];
+    for (let i = 1; i <= 48; i++) {
+        if (!newMap['pos_' + i] && unassigned.length > 0) {
+            newMap['pos_' + i] = unassigned.shift();
+        }
+    }
+
+    STATE.map = newMap;
+    window.saveData('map', STATE.map);
+
+    if (typeof window.renderSeatingMap === 'function') window.renderSeatingMap();
+    if (typeof window.renderAdminSeatingMap === 'function') window.renderAdminSeatingMap();
+};
+// =========================================================================
+function createSeatingGridHTML(isAdmin) {
+    let html = '';
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+
+    const renderSeat = (p) => {
+        let stt = STATE.map['pos_' + p];
+        let name = stt ? STATE.students[stt - 1] : "";
+        let role = stt ? (STATE.positions[stt] || "") : "";
+        let roleBadge = role ? `<div style="font-size:0.5rem; color:#fff; background:#ef4444; border-radius:4px; padding:2px 4px; display:inline-block; margin-bottom:2px; font-weight:bold;">${role}</div>` : '';
+        let extraClass = !stt ? 'empty-seat' : '';
+        let onclick = isAdmin ? `onclick="window.selectSeatForSwap(${p})"` : '';
+        return `
+        <div class="seat-box ${extraClass}" id="seat-${isAdmin?'admin':'public'}-${p}" ${onclick} style="border:2px solid #94a3b8; box-shadow:0 1px 3px rgba(0,0,0,0.05); width: 75px; height: 50px;">
+            ${roleBadge}
+            <div class="seat-name" style="text-align:center; font-size:0.58rem;">${name || "Trống"}</div>
+        </div>`;
+    };
+
+    const renderGroupColumn = (groupTitle, groupClass, pList) => {
+        let seatsHTML = '';
+        for (let i = 0; i < pList.length; i += 2) {
+            seatsHTML += `<div style="display:flex; gap:4px; justify-content:center; margin-bottom:4px;">${renderSeat(pList[i])}${pList[i+1] ? renderSeat(pList[i+1]) : ''}</div>`;
+        }
+        return `
+        <div class="${groupClass}" style="flex: 1; min-width: 170px; padding: 8px; border-radius: 10px; background: #ffffff; display: flex; flex-direction: column;">
+            <div style="text-align:center; font-weight:900; font-size:0.85rem; text-transform:uppercase; margin-bottom:8px; padding:4px; border-radius:6px; background:rgba(0,0,0,0.04);">${groupTitle}</div>
+            ${seatsHTML}
+        </div>`;
+    };
+
+    let cols = {
+        1: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45],
+        2: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46],
+        3: [3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47],
+        4: [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]
+    };
+
+    html += `<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%;">`;
+    for (let c = 1; c <= 4; c++) {
+        let groupId = labelSwap[c] || c; 
+        html += renderGroupColumn("Tổ " + groupId, "group-tto-" + groupId, cols[c]);
+    }
+    html += `</div>`;
+    return html;
+}
+
+window.autoMapStudentsByGroup = function() {
+    let newMap = {};
+    for (let i = 1; i <= 48; i++) newMap['pos_' + i] = null;
+
+    let groups = { 1: [], 2: [], 3: [], 4: [], "Chưa chọn": [] };
+    STATE.students.forEach((_, idx) => {
+        let stt = idx + 1;
+        let gStr = STATE.studentGroups && STATE.studentGroups[stt] ? STATE.studentGroups[stt] : "";
+        let gNum = parseInt(String(gStr).replace(/\D/g, ''));
+        if (gNum >= 1 && gNum <= 4) groups[gNum].push(stt);
+        else groups["Chưa chọn"].push(stt);
+    });
+
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+    let cols = {
+        1: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45],
+        2: [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46],
+        3: [3, 7, 11, 15, 19, 23, 27, 31, 35, 39, 43, 47],
+        4: [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]
+    };
+
+    for (let c = 1; c <= 4; c++) {
+        let groupId = labelSwap[c] || c; 
+        let members = groups[groupId] || []; 
+        
+        members.forEach((stt, index) => {
+            if (index < cols[c].length) {
+                newMap['pos_' + cols[c][index]] = stt;
+            }
+        });
+    }
+
+    let unassigned = [...groups["Chưa chọn"]];
+    for (let i = 1; i <= 48; i++) {
+        if (!newMap['pos_' + i] && unassigned.length > 0) {
+            newMap['pos_' + i] = unassigned.shift();
+        }
+    }
+
+    STATE.map = newMap;
+    window.saveData('map', STATE.map);
+
+    if (typeof window.renderSeatingMap === 'function') window.renderSeatingMap();
+    if (typeof window.renderAdminSeatingMap === 'function') window.renderAdminSeatingMap();
+};
+
+window.swapEntireGroups = function() {
+    const targetG1 = parseInt(document.getElementById("swap-group-1").value); 
+    const targetG2 = parseInt(document.getElementById("swap-group-2").value); 
+    if(targetG1 === targetG2) return alert("Vui lòng chọn 2 tổ khác nhau!");
+
+    let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+
+    let col1 = Object.keys(labelSwap).find(k => labelSwap[k] == targetG1);
+    let col2 = Object.keys(labelSwap).find(k => labelSwap[k] == targetG2);
+
+    if (!col1 || !col2) {
+        STATE.groupLabelSwap = { 1: 1, 2: 2, 3: 3, 4: 4 };
+        window.saveData('groupLabelSwap', STATE.groupLabelSwap);
+        window.autoMapStudentsByGroup();
+        return alert("Dữ liệu hoán đổi cũ bị kẹt. Hệ thống đã tự động làm mới, cô vui lòng chọn đổi lại 1 lần nữa!");
+    }
+
+    col1 = parseInt(col1);
+    col2 = parseInt(col2);
+
+    let temp = labelSwap[col1];
+    labelSwap[col1] = labelSwap[col2];
+    labelSwap[col2] = temp;
+
+    STATE.groupLabelSwap = labelSwap;
+    window.saveData('groupLabelSwap', STATE.groupLabelSwap);
+
+    window.autoMapStudentsByGroup();
+    alert(`🎉 Đã đổi chỗ thành công Tổ ${targetG1} và Tổ ${targetG2}!`);
+};
+
+function getGroupMembers(groupId) {
+    let members = [];
+    if (typeof STATE !== 'undefined' && STATE.studentGroups) {
+        for (let stt = 1; stt <= STATE.students.length; stt++) {
+            let assignedGroupStr = STATE.studentGroups[stt];
+            if (assignedGroupStr) {
+                let gNum = parseInt(String(assignedGroupStr).replace(/\D/g, ''));
+                if (gNum == groupId) members.push(stt);
+            }
+        }
+    }
+    if (members.length === 0 && typeof STATE !== 'undefined' && STATE.map) {
+        for (let i = 1; i <= 48; i++) {
+            let stt = STATE.map['pos_' + i];
+            if (stt) {
+                let labelSwap = STATE.groupLabelSwap || { 1: 1, 2: 2, 3: 3, 4: 4 };
+                let colIndex = ((i - 1) % 4) + 1; 
+                let actualGroupNum = labelSwap[colIndex];
+                if (actualGroupNum == groupId) members.push(stt);
+            }
+        }
+    }
+    return members;
+}
 </script>
 </body>
 </html>
